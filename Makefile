@@ -15,4 +15,12 @@ clean: down
 	docker system prune -af
 	docker volume prune -f
 
+cleanfull: down
+	docker system prune -af
+	docker volume prune -f
+	docker volume rm srcs_mariadb-data
+	docker volume rm srcs_wordpress-data
+	sudo rm -rf /home/fprevot/data/mariadb/*
+	sudo rm -rf /home/fprevot/data/wordpress/*
+
 re: clean all

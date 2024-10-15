@@ -1,61 +1,62 @@
 services:
+  nginx:
+    container_name: nginx
+    build: ./requirements/nginx
+    ports:
+      - "443:443"
+    volumes:
+      - wordpress-data:/var/www/html
+    depends_on:
+      - wordpress
+    restart: always
+    networks:
+      - inception
+
   mariadb:
     container_name: mariadb
-    build: ./requirements/mariadb
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    build:
+      context: ./requirements/mariadb
+      args:
+      - MYSQL_DATABASE
+      - MYSQL_USER
+      - MYSQL_PASSWORD
+      - MYSQL_ROOT_PASSWORD
+    ports:
+      - "3306:3306"
     volumes:
       - mariadb-data:/var/lib/mysql
     networks:
       - inception
-    restart: always
+    env_file:
+      - .env
 
   wordpress:
     container_name: wordpress
     build: ./requirements/wordpress
+    volumes:
+      - wordpress-data:/var/www/html
     depends_on:
       - mariadb
-    environment:
-      WORDPRESS_DB_HOST: mariadb:3306
-      WORDPRESS_DB_USER: ${MYSQL_USER}
-      WORDPRESS_DB_PASSWORD: ${MYSQL_PASSWORD}
-      WORDPRESS_DB_NAME: ${MYSQL_DATABASE}
-      DOMAIN_NAME: ${DOMAIN_NAME}
-      WP_ADMIN_USER: ${WP_ADMIN_USER}
-      WP_ADMIN_PASSWORD: ${WP_ADMIN_PASSWORD}
-      WP_ADMIN_EMAIL: ${WP_ADMIN_EMAIL}
-      WP_USER: ${WP_USER}
-      WP_USER_PASSWORD: ${WP_USER_PASSWORD}
-      WP_USER_EMAIL: ${WP_USER_EMAIL}
-    volumes:
-      - wp_data:/var/www/html
+    restart: always
+    env_file:
+      - .env
     networks:
       - inception
-    restart: always
 
-  nginx:
-    container_name: nginx
-    build:
-      context: ./requirements/nginx
-      args:
-        DOMAIN_NAME: ${DOMAIN_NAME}
-    depends_on:
-      - wordpress
-    ports:
-      - "443:443"
-    volumes:
-      - wp_data:/var/www/html
-    networks:
-      - inception
-    restart: always
+volumes:
+  mariadb-data:
+    driver: local
+    driver_opts:
+      type: none
+      device: /home/fprevot/data/mariadb
+      o: bind
+  wordpress-data:
+    driver: local
+    driver_opts:
+      type: none
+      device: /home/fprevot/data/wordpress
+      o: bind
 
 networks:
   inception:
     driver: bridge
-
-volumes:
-  wp_data:
-  mariadb-data:

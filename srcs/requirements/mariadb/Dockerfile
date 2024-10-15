@@ -1,26 +1,25 @@
-FROM alpine:3.16
+FROM debian:11
 
-# Install MariaDB and necessary tools
-RUN apk update && apk add --no-cache mariadb mariadb-client gettext su-exec
+ENV DEBIAN_FRONTEND=noninteractive
+ARG MYSQL_DATABASE=;
+ARG MYSQL_USER=;
+ARG MYSQL_PASSWORD=;
+ARG MYSQL_ROOT_PASSWORD=;
 
-# Create necessary directories
-RUN mkdir -p /var/lib/mysql /run/mysqld
+RUN apt-get update && apt-get install -y \
+    mariadb-server \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy the custom MariaDB configuration
-COPY conf/my.cnf /etc/my.cnf
+# repo for mysql
+RUN mkdir -p /var/run/mysqld && chown -R mysql:mysql /var/run/mysqld && chmod 777 /var/run/mysqld
 
-# Copy the entrypoint script
-COPY docker-entrypoint.sh /usr/local/bin/
+# init db
+RUN	service mariadb start \
+&& mysql -u root -e "CREATE DATABASE ${MYSQL_DATABASE};" && \
+mysql -u root -e "CREATE USER '${MYSQL_USER}'@'%' IDENTIFIED BY '${MYSQL_PASSWORD}';" && \
+mysql -u root -e "GRANT ALL PRIVILEGES ON ${MYSQL_DATABASE}.* TO '${MYSQL_USER}'@'%';" && \
+mysql -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '${MYSQL_ROOT_PASSWORD}';"
 
-# Make the entrypoint script executable
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
-
-# Adjust permissions
-RUN chown -R mysql:mysql /var/lib/mysql /run/mysqld
-
-# Expose MariaDB port
 EXPOSE 3306
 
-# Define the entrypoint and default command
-ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
-CMD ["mysqld", "--datadir=/var/lib/mysql"]
+CMD ["mysqld", "--bind-address=0.0.0.0"]

@@ -1,0 +1,23 @@
+	
+docker clear :
+
+    docker system prune -af
+	docker volume prune -f
+
+
+volume reset :
+
+	docker volume rm srcs_mariadb-data
+	docker volume rm srcs_wordpress-data
+	sudo rm -rf /home/fprevot/data/mariadb/*
+	sudo rm -rf /home/fprevot/data/wordpress/*
+
+
+connection pannel :
+
+    https://fprevot.42.fr/wp-login.php
+
+docker utils cmd :
+
+    docker logs <docker>
+    docker volume ls
